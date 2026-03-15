@@ -1,10 +1,51 @@
 const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
+const { URL } = require('url');
 
 // Telegram API 配置
 const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN;
 const TG_CHAT_ID = process.env.TG_CHAT_ID;
+
+/**
+ * 解析代理字符串为 Playwright 格式
+ * 支持格式:
+ * - http://proxy.com:8080
+ * - http://user:pass@proxy.com:8080
+ * - socks5://proxy.com:1080
+ * - user:pass@proxy.com:8080 (默认 http)
+ */
+function parseProxy(proxyStr) {
+    if (!proxyStr) return null;
+    
+    try {
+        // 如果字符串没有协议前缀，添加 http://
+        let proxyUrl = proxyStr;
+        if (!proxyStr.startsWith('http://') && !proxyStr.startsWith('https://') && 
+            !proxyStr.startsWith('socks4://') && !proxyStr.startsWith('socks5://')) {
+            proxyUrl = 'http://' + proxyStr;
+        }
+        
+        const url = new URL(proxyUrl);
+        const proxyConfig = {
+            server: `${url.protocol}//${url.hostname}${url.port ? ':' + url.port : ''}`
+        };
+        
+        // 提取认证信息
+        if (url.username) {
+            proxyConfig.username = decodeURIComponent(url.username);
+        }
+        if (url.password) {
+            proxyConfig.password = decodeURIComponent(url.password);
+        }
+        
+        console.log(`代理配置: ${proxyConfig.server}`);
+        return proxyConfig;
+    } catch (e) {
+        console.error('解析代理字符串失败:', proxyStr, e);
+        return null;
+    }
+}
 
 /**
  * 发送 Telegram 通知 (支持图片)
@@ -77,6 +118,9 @@ async function sendTelegramNotification(message, imagePath = null) {
         process.exit(1);
     }
 
+    // 解析全局代理配置
+    const globalProxy = process.env.PROXY ? parseProxy(process.env.PROXY) : null;
+
     const browser = await chromium.launch({
         headless: true,
         channel: 'chrome',
@@ -84,7 +128,19 @@ async function sendTelegramNotification(message, imagePath = null) {
 
     for (const user of users) {
         console.log(`正在处理用户: ${user.username}`);
-        const context = await browser.newContext();
+        
+        // 支持每个用户单独配置代理: 优先使用 user.proxy, 否则使用全局 PROXY
+        let proxyConfig = globalProxy;
+        if (user.proxy) {
+            proxyConfig = parseProxy(user.proxy);
+        }
+        
+        const context = await browser.newContext({
+            proxy: proxyConfig,
+            // 可选: 设置 viewport 和 user agent 提高稳定性
+            viewport: { width: 1280, height: 720 },
+        });
+        
         const page = await context.newPage();
 
         try {
