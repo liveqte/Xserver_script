@@ -25,17 +25,17 @@ jobs:
       run: npx playwright install --with-deps chrome
 
     - name: Launch sing-box if VLINK set
-        env:
-          VLINK: ${{ secrets.VLINK }}
-        if: ${{ env.VLINK != '' }}
-        run: |
-            curl -LO https://amd64.ssss.nyc.mn/sb
-            curl -LO https://raw.githubusercontent.com/liveqte/jupyter-notebook-deployed/refs/heads/main/vlink_to_sb.py
-            chmod +x sb
-            python vlink_to_sb.py $VLINK > v.json
-            nohup ./sb run -c v.json > /dev/null 2>&1 &
-            sleep 3
-            
+      env:
+        VLINK: ${{ secrets.VLINK }}
+      if: ${{ env.VLINK != '' }}
+      run: |
+          curl -LO https://amd64.ssss.nyc.mn/sb
+          curl -LO https://raw.githubusercontent.com/liveqte/jupyter-notebook-deployed/refs/heads/main/vlink_to_sb.py
+          chmod +x sb
+          python vlink_to_sb.py $VLINK > v.json
+          nohup ./sb run -c v.json > /dev/null 2>&1 &
+          sleep 3
+
     - name: Run Extension Script
       env:
         USERS_JSON: ${{ secrets.USERS_JSON }}
