@@ -127,7 +127,7 @@ async function sendTelegramNotification(message, imagePath = null) {
     });
 
     for (const user of users) {
-        console.log(`正在处理用户: ${user.username}`);
+        //console.log(`正在处理用户: ${user.username}`);
         
         // 支持每个用户单独配置代理: 优先使用 user.proxy, 否则使用全局 PROXY
         let proxyConfig = globalProxy;
@@ -138,6 +138,9 @@ async function sendTelegramNotification(message, imagePath = null) {
         const context = await browser.newContext({
             proxy: proxyConfig,
             // 可选: 设置 viewport 和 user agent 提高稳定性
+            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0',
+            locale: 'en-US,en;q=0.9,ja;q=0.8',
+            timezoneId: 'America/New_York',
             viewport: { width: 1280, height: 720 },
         });
         
@@ -171,14 +174,14 @@ async function sendTelegramNotification(message, imagePath = null) {
 
                 let msg;
                 if (match && match[1]) {
-                    msg = `⚠️ 用户 ${user.username} 目前无法延期，下次延长时间在：${match[1]}`;
+                    msg = `⚠️ 用户目前无法延期，下次延长时间在：${match[1]}`;
                 } else {
-                    msg = `⚠️ 用户 ${user.username} 未找到 '期限延长' 按钮。可能无法延长。`;
+                    msg = `⚠️ 用户未找到 '期限延长' 按钮。可能无法延长。`;
                 }
 
                 console.log(msg);
                 // 保存截图
-                const screenshotPath = `skip_${user.username}.png`;
+                const screenshotPath = `skip.png`;
                 await page.screenshot({ path: screenshotPath });
                 await sendTelegramNotification(msg, screenshotPath);
                 continue;
@@ -188,22 +191,22 @@ async function sendTelegramNotification(message, imagePath = null) {
             await page.getByRole('button', { name: '確認画面に進む' }).click();
 
             // 6. 执行延长
-            console.log(`正在点击用户 ${user.username} 的最终延长按钮...`);
+            console.log(`正在点击用户的最终延长按钮...`);
             await page.getByRole('button', { name: '期限を延長する' }).click();
 
             // 7. 返回
             await page.getByRole('link', { name: '戻る' }).click();
 
-            const successMsg = `✅ 用户 ${user.username} 成功延长期限`;
+            const successMsg = `✅ 用户成功延长期限`;
             console.log(successMsg);
-            const successPath = `success_${user.username}.png`;
+            const successPath = `success.png`;
             await page.screenshot({ path: successPath });
             await sendTelegramNotification(successMsg, successPath);
 
         } catch (error) {
-            const errorMsg = `❌ 用户 ${user.username} 处理失败: ${error}`;
+            const errorMsg = `❌ 用户处理失败: ${error}`;
             console.error(errorMsg);
-            const errorPath = `error_${user.username}.png`;
+            const errorPath = `error.png`;
             await page.screenshot({ path: errorPath });
             await sendTelegramNotification(errorMsg, errorPath);
             // 不退出进程，继续下一个用户
