@@ -138,9 +138,9 @@ async function sendTelegramNotification(message, imagePath = null) {
         const context = await browser.newContext({
             proxy: proxyConfig,
             // 可选: 设置 viewport 和 user agent 提高稳定性
-            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0',
-            locale: 'en-US,en;q=0.9,ja;q=0.8',
-            timezoneId: 'America/New_York',
+            userAgent: process.env.USER_AGENT,
+            locale: process.env.BROWSER_LOCALE ,
+            timezoneId: process.env.BROWSER_TIMEZONE,
             viewport: { width: 1280, height: 720 },
         });
         
