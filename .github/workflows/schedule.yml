@@ -2,7 +2,7 @@ name: XServer Extend Schedule
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Runs every 24 hours at 00:00 UTC
+    - cron: '13 30 * * *' # Runs every 24 hours at 00:00 UTC
   workflow_dispatch: # Allows manual trigger
 
 jobs:
@@ -44,10 +44,10 @@ jobs:
         PROXY: ${{ secrets.PROXY }}
       run: node action.js
 
-    - name: Upload Screenshots
-      if: always() # Run even if the script fails
-      uses: actions/upload-artifact@v4
-      with:
-        name: screenshots
-        path: "*.png"
-        retention-days: 5
+    # - name: Upload Screenshots
+    #   if: always() # Run even if the script fails
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: screenshots
+    #     path: "*.png"
+    #     retention-days: 5
