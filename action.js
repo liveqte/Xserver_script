@@ -134,13 +134,13 @@ async function sendTelegramNotification(message, imagePath = null) {
         if (user.proxy) {
             proxyConfig = parseProxy(user.proxy);
         }
-        
+        const tz = process.env.BROWSER_TIMEZONE?.trim() || 'UTC';
         const context = await browser.newContext({
             proxy: proxyConfig,
             // 可选: 设置 viewport 和 user agent 提高稳定性
             userAgent: process.env.USER_AGENT,
-            locale: process.env.BROWSER_LOCALE ,
-            timezoneId: process.env.BROWSER_TIMEZONE,
+            locale: process.env.BROWSER_LOCALE,
+            timezoneId: tz,
             viewport: { width: 1280, height: 720 },
         });
         
