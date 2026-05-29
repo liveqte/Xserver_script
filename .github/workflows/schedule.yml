@@ -36,13 +36,6 @@ jobs:
           nohup ./sb run -c v.json > /dev/null 2>&1 &
           sleep 3
 
-    - name: Install timezone data
-      run: |
-          sudo apt-get update
-          sudo apt-get install -y tzdata
-          # 验证时区文件是否存在
-          ls -la /usr/share/zoneinfo/Asia/Tokyo
-
     - name: Run Extension Script
       env:
         USERS_JSON: ${{ secrets.USERS_JSON }}
