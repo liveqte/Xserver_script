@@ -43,7 +43,7 @@ jobs:
         TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         USER_AGENT: ${{ secrets.USER_AGENT }},
         BROWSER_LOCALE: ${{ secrets.BROWSER_LOCALE }},
-        BROWSER_TIMEZONE: ${{ secrets.BROWSER_TIMEZONE }},
+        BROWSER_TIMEZONE: Asia/Tokyo,
         PROXY: ${{ secrets.PROXY }}
       run: node action.js
 
