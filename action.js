@@ -140,7 +140,7 @@ async function sendTelegramNotification(message, imagePath = null) {
             // 可选: 设置 viewport 和 user agent 提高稳定性
             userAgent: process.env.USER_AGENT,
             locale: process.env.BROWSER_LOCALE,
-            timezoneId: tz,
+            timezoneId: "Asia/Tokyo",
             viewport: { width: 1280, height: 720 },
         });
         
