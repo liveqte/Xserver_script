@@ -2,11 +2,51 @@ name: XServer Extend Schedule
 
 on:
   schedule:
-    - cron: '30 13 * * *' # Runs every 24 hours at 00:00 UTC
+    - cron: '30 * * * *' # Runs every 24 hours at 00:00 UTC
   workflow_dispatch: # Allows manual trigger
 
 jobs:
+  pre-check:
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.check.outputs.should_skip }}
+    steps:
+      # 1. 尝试恢复上一次成功时保存的时间戳
+      - name: Restore Last Success Timestamp
+        id: cache-timestamp
+        uses: actions/cache/restore@v4
+        with:
+          path: last_success_time.txt
+          key: timestamp-v2-${{ github.run_id }} # 每次使用新Key，防止命中本次 workflow 自己的缓存
+          restore-keys: |
+            timestamp-v2-
+
+      # 2. 判断是否满足 40-48 小时窗口
+      - name: Evaluate Time Window
+        id: check
+        run: |
+          NOW=$(date +%s)
+          
+          if [ -f "last_success_time.txt" ]; then
+            LAST_SUCCESS=$(cat last_success_time.txt)
+            DIFF_HOURS=$(( (NOW - LAST_SUCCESS) / 3600 ))
+            echo "距离上一次任务【真正成功】已过去: $DIFF_HOURS 小时"
+            
+            # 判断是否满足窗口期（>=40小时）。如果超过48小时也放行，防止断档
+            if [ $DIFF_HOURS -ge 40 ]; then
+              echo "已进入执行窗口，允许流程继续。"
+              echo "should_skip=false" >> $GITHUB_OUTPUT
+            else
+              echo "未到40小时冷却期，拦截后续流程。"
+              echo "should_skip=true" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "未找到任何历史成功记录（可能是首次运行），默认允许执行！"
+            echo "should_skip=false" >> $GITHUB_OUTPUT
+          fi
   extend-server:
+    needs: pre-check
+    if: ${{ needs['pre-check'].outputs.should_skip == 'false' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -54,3 +94,16 @@ jobs:
     #     name: screenshots
     #     path: "*.png"
     #     retention-days: 5
+    # 2. 【核心思路】只有核心任务成功了，这一步才会运行，写入当前时间戳
+    - name: Generate New Success Timestamp
+      run: |
+        date +%s > last_success_time.txt
+        echo "已成功记录本次完成的时间戳: $(cat last_success_time.txt)"
+
+    # 3. 将最新的成功时间戳存入 GitHub 缓存，供后续的轮询读取
+    - name: Save Success Timestamp to Cache
+      uses: actions/cache/save@v4
+      with:
+        path: last_success_time.txt
+        # 用唯一的 run_id 确保每次保存的都是独一无二的最新缓存
+        key: timestamp-v2-${{ github.run_id }}
