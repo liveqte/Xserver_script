@@ -33,7 +33,7 @@ jobs:
             echo "距离上一次任务【真正成功】已过去: $DIFF_HOURS 小时"
             
             # 判断是否满足窗口期（>=40小时）。如果超过48小时也放行，防止断档
-            if [ $DIFF_HOURS -ge 40 ]; then
+            if [ $DIFF_HOURS -ge 48 ]; then
               echo "已进入执行窗口，允许流程继续。"
               echo "should_skip=false" >> $GITHUB_OUTPUT
             else
