@@ -26,22 +26,27 @@ jobs:
         id: check
         run: |
           NOW=$(date +%s)
-          
           if [ -f "last_success_time.txt" ]; then
             LAST_SUCCESS=$(cat last_success_time.txt)
-            DIFF_HOURS=$(( (NOW - LAST_SUCCESS) / 3600 ))
-            echo "距离上一次任务【真正成功】已过去: $DIFF_HOURS 小时"
+            ELAPSED=$(( NOW - LAST_SUCCESS ))
+            DIFF_HOURS=$(( ELAPSED / 3600 ))
             
-            # 判断是否满足窗口期（>=40小时）。如果超过48小时也放行，防止断档
-            if [ $DIFF_HOURS -ge 40 ]; then
-              echo "已进入执行窗口，允许流程继续。"
+            # 计算当前处于12小时周期中的第几个小时（0~11）
+            HOURS_IN_CYCLE=$(( DIFF_HOURS % 12 ))
+            
+            echo "距离上一次任务【真正成功】已过去: $DIFF_HOURS 小时"
+            echo "当前处于12小时周期的第 ${HOURS_IN_CYCLE} 小时"
+            
+            # 核心逻辑：每12小时一个周期，仅在最后4小时（即第8、9、10、11小时）放行
+            if [ $HOURS_IN_CYCLE -ge 8 ]; then
+              echo "✅ 已进入执行窗口（12小时周期内的最后4小时），允许流程继续。"
               echo "should_skip=false" >> $GITHUB_OUTPUT
             else
-              echo "未到40小时冷却期，拦截后续流程。"
+              echo "⏳ 未到冷却期，拦截后续流程。"
               echo "should_skip=true" >> $GITHUB_OUTPUT
             fi
           else
-            echo "未找到任何历史成功记录（可能是首次运行），默认允许执行！"
+            echo "🆕 未找到任何历史成功记录（可能是首次运行），默认允许执行！"
             echo "should_skip=false" >> $GITHUB_OUTPUT
           fi
   extend-server:
