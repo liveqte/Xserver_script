@@ -21,7 +21,7 @@ jobs:
           restore-keys: |
             timestamp-v2-
 
-      # 2. 判断是否满足 40-48 小时窗口
+      # 2. 判断是否满足 12-16 小时窗口
       - name: Evaluate Time Window
         id: check
         run: |
@@ -29,20 +29,16 @@ jobs:
           if [ -f "last_success_time.txt" ]; then
             LAST_SUCCESS=$(cat last_success_time.txt)
             ELAPSED=$(( NOW - LAST_SUCCESS ))
+            # 计算经过的完整小时数（向下取整）
             DIFF_HOURS=$(( ELAPSED / 3600 ))
-            
-            # 计算当前处于12小时周期中的第几个小时（0~11）
-            HOURS_IN_CYCLE=$(( DIFF_HOURS % 12 ))
-            
             echo "距离上一次任务【真正成功】已过去: $DIFF_HOURS 小时"
-            echo "当前处于12小时周期的第 ${HOURS_IN_CYCLE} 小时"
             
-            # 核心逻辑：每12小时一个周期，仅在最后4小时（即第8、9、10、11小时）放行
-            if [ $HOURS_IN_CYCLE -ge 8 ]; then
-              echo "✅ 已进入执行窗口（12小时周期内的最后4小时），允许流程继续。"
+            # 核心逻辑：只要超过或等于12小时，就允许执行
+            if [ $DIFF_HOURS -ge 12 ]; then
+              echo "✅ 距离上次成功已超过12小时冷却期，允许流程继续。"
               echo "should_skip=false" >> $GITHUB_OUTPUT
             else
-              echo "⏳ 未到冷却期，拦截后续流程。"
+              echo "⏳ 未到12小时冷却期，拦截后续流程。"
               echo "should_skip=true" >> $GITHUB_OUTPUT
             fi
           else
