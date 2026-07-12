@@ -1,8 +1,6 @@
 name: XServer Extend Schedule
 
 on:
-  schedule:
-    - cron: '30 * * * *' # Runs every 24 hours at 00:00 UTC
   workflow_dispatch: # Allows manual trigger
 
 jobs:
@@ -33,9 +31,9 @@ jobs:
             DIFF_HOURS=$(( ELAPSED / 3600 ))
             echo "距离上一次任务【真正成功】已过去: $DIFF_HOURS 小时"
             
-            # 核心逻辑：只要超过或等于12小时，就允许执行
-            if [ $DIFF_HOURS -ge 12 ]; then
-              echo "✅ 距离上次成功已超过12小时冷却期，允许流程继续。"
+            # 核心逻辑：只要超过或等于11小时，就允许执行
+            if [ $DIFF_HOURS -ge 11 ]; then
+              echo "✅ 距离上次成功已超过11小时冷却期，允许流程继续。"
               echo "should_skip=false" >> $GITHUB_OUTPUT
             else
               echo "⏳ 未到12小时冷却期，拦截后续流程。"
@@ -78,16 +76,30 @@ jobs:
           sleep 3
 
     - name: Run Extension Script
+      id: run_ext
       env:
         USERS_JSON: ${{ secrets.USERS_JSON }}
         TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
         TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-        USER_AGENT: ${{ secrets.USER_AGENT }},
-        BROWSER_LOCALE: ${{ secrets.BROWSER_LOCALE }},
-        BROWSER_TIMEZONE: Asia/Tokyo,
+        USER_AGENT: ${{ secrets.USER_AGENT }}
+        BROWSER_LOCALE: ${{ secrets.BROWSER_LOCALE }}
+        BROWSER_TIMEZONE: Asia/Tokyo
         PROXY: ${{ secrets.PROXY }}
-      run: node action.js
-
+      run: |
+        # 捕获 node 脚本的所有输出 (2>&1 确保错误信息也能被捕获)
+        OUTPUT=$(node action.js 2>&1)
+        
+        # 将输出打印到日志，方便你在 GitHub 后台排查问题
+        echo "$OUTPUT"
+        
+        # 检查输出中是否包含“用户成功延长期限”
+        if echo "$OUTPUT" | grep -q "用户成功延长期限"; then
+          echo "✅ 检测到成功延期，设置标记为 true"
+          echo "is_extended=true" >> $GITHUB_OUTPUT
+        else
+          echo "❌ 未检测到成功延期，设置标记为 false"
+          echo "is_extended=false" >> $GITHUB_OUTPUT
+        fi
     # - name: Upload Screenshots
     #   if: always() # Run even if the script fails
     #   uses: actions/upload-artifact@v4
@@ -97,12 +109,14 @@ jobs:
     #     retention-days: 5
     # 2. 【核心思路】只有核心任务成功了，这一步才会运行，写入当前时间戳
     - name: Generate New Success Timestamp
+      if: steps.run_ext.outputs.is_extended == 'true'
       run: |
         date +%s > last_success_time.txt
         echo "已成功记录本次完成的时间戳: $(cat last_success_time.txt)"
 
     # 3. 将最新的成功时间戳存入 GitHub 缓存，供后续的轮询读取
     - name: Save Success Timestamp to Cache
+      if: steps.run_ext.outputs.is_extended == 'true'
       uses: actions/cache/save@v4
       with:
         path: last_success_time.txt
