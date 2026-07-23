@@ -117,7 +117,7 @@ jobs:
     # 3. 将最新的成功时间戳存入 GitHub 缓存，供后续的轮询读取
     - name: Save Success Timestamp to Cache
       if: steps.run_ext.outputs.is_extended == 'true'
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: last_success_time.txt
         # 用唯一的 run_id 确保每次保存的都是独一无二的最新缓存
