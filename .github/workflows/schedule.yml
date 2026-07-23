@@ -15,7 +15,7 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: last_success_time.txt
-          key: timestamp-v2-${{ github.run_id }} # 每次使用新Key，防止命中本次 workflow 自己的缓存
+          key: timestamp-v2-
           restore-keys: |
             timestamp-v2-
 
