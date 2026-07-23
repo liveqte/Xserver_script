@@ -31,9 +31,9 @@ jobs:
             DIFF_HOURS=$(( ELAPSED / 3600 ))
             echo "距离上一次任务【真正成功】已过去: $DIFF_HOURS 小时"
             
-            # 核心逻辑：只要超过或等于11小时，就允许执行
-            if [ $DIFF_HOURS -ge 11 ]; then
-              echo "✅ 距离上次成功已超过11小时冷却期，允许流程继续。"
+            # 核心逻辑：只要超过或等于12小时，就允许执行
+            if [ $DIFF_HOURS -ge 12 ]; then
+              echo "✅ 距离上次成功已超过12小时冷却期，允许流程继续。"
               echo "should_skip=false" >> $GITHUB_OUTPUT
             else
               echo "⏳ 未到12小时冷却期，拦截后续流程。"
