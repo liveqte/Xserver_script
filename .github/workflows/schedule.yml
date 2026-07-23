@@ -12,7 +12,6 @@ jobs:
       # 1. 尝试恢复上一次成功时保存的时间戳
       - name: Restore Last Success Timestamp
         id: cache-timestamp
-        continue-on-error: true
         uses: actions/cache/restore@v5
         with:
           path: last_success_time.txt
@@ -41,8 +40,8 @@ jobs:
               echo "should_skip=true" >> $GITHUB_OUTPUT
             fi
           else
-            echo "🆕 未找到任何历史成功记录（可能是首次运行），默认允许执行！"
-            echo "should_skip=false" >> $GITHUB_OUTPUT
+            echo "❌ 未找到任何历史缓存记录 (Cache not found)，取消后续行动！"
+            echo "should_skip=true" >> $GITHUB_OUTPUT
           fi
   extend-server:
     needs: pre-check
