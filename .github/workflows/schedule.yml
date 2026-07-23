@@ -12,6 +12,7 @@ jobs:
       # 1. 尝试恢复上一次成功时保存的时间戳
       - name: Restore Last Success Timestamp
         id: cache-timestamp
+        continue-on-error: true
         uses: actions/cache/restore@v5
         with:
           path: last_success_time.txt
