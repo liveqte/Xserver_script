@@ -12,7 +12,7 @@ jobs:
       # 1. 尝试恢复上一次成功时保存的时间戳
       - name: Restore Last Success Timestamp
         id: cache-timestamp
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: last_success_time.txt
           key: timestamp-v2-${{ github.run_id }} # 每次使用新Key，防止命中本次 workflow 自己的缓存
